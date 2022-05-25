@@ -51,7 +51,7 @@ class Encoder(nn.Module):
 class Decoder(nn.Module):
     def __init__(self, size, nx, nh, nz):
         super(Decoder, self).__init__()
-        net = [
+        self.net = nn.Sequential(
             nn.Linear(nz, nh),
             nn.LayerNorm(nh),
             nn.ReLU(True),
@@ -63,8 +63,7 @@ class Decoder(nn.Module):
             nn.ReLU(True),
             nn.Linear(nh, nx*size**2),
             nn.Unflatten(1, (nx, size, size))
-        ]
-        self.net = nn.Sequential(*net)
+        )
 
     def forward(self, z):
         return self.net(z)
