@@ -54,13 +54,13 @@ class Decoder(nn.Module):
         net = [
             nn.Linear(nz, nh),
             nn.LayerNorm(nh),
-            act,
+            nn.ReLU(True),
             nn.Linear(nh, nh),
             nn.LayerNorm(nh),
-            act,
+            nn.ReLU(True),
             nn.Linear(nh, nh),
             nn.LayerNorm(nh),
-            act,
+            nn.ReLU(True),
             nn.Linear(nh, nx*size**2),
             nn.Unflatten(1, (nx, size, size))
         ]
