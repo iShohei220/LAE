@@ -70,7 +70,6 @@ class VAE(nn.Module):
         super(VAE, self).__init__()
         self.encoder = Encoder(size, nx, nh, 2*nz)
         self.decoder = Decoder(size, nx, nh, nz)
-        self.flow = nn.ModuleList([PlanarFlow(nz) for _ in range(3)])
         self.logit_tau = nn.Parameter(torch.zeros(1))
         self.nz = nz
         self.reset_parameters()
@@ -92,17 +91,12 @@ class VAE(nn.Module):
         z = q_z.rsample()
         p_z = Independent(Normal(torch.zeros_like(z), torch.ones_like(z)), 1)
 
-        logdet = 0
-        for flow in self.flow:
-            z, _logdet = flow(z)
-            logdet += _logdet
-
         mu_x = self.decoder(z)
         sigma_x = F.softplus(self.logit_tau).reciprocal().sqrt().reshape(1, -1, 1, 1)
 
         energy = discretized_logistic_energy(x, mu_x, sigma_x).sum([1, 2, 3])
 
-        regularization = - q_z.entropy() - p_z.log_prob(z) - logdet
+        regularization = kl_divergence(q_z, p_z)
         loss = energy + regularization
 
         return loss
@@ -121,8 +115,6 @@ class VAE(nn.Module):
         sigma_z = F.softplus(logit_tau_z).reciprocal().sqrt()
         q_z = Independent(Normal(mu_z, sigma_z), 1)
         z = q_z.sample()
-        for flow in self.flow:
-            z = flow(z)[0]
 
         x = self.decoder(z)
         x = (x + 1) / 2
